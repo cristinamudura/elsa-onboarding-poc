@@ -16,26 +16,26 @@ namespace ElsaEngine.Workflows
                 .Then<UserTaskSignal>(a =>
                 {
                     a.Set(x => x.Signal, "userDetails");
-                    a.Set(x => x.TaskName, "Demo Sample3");
-                    a.Set(x => x.TaskTitle, "Dynamic forms");
+                    a.Set(x => x.TaskName, "User Details");
+                    a.Set(x => x.TaskTitle, "User Details");
                     a.Set(x => x.UIDefinition,
                         "Elsa.OnBoardingProcess.PoC.Pages.OnBoarding.UserDetails");
                     a.Set(x => x.AllowPrevious,
                         false);
-                    a.Set(x => x.TaskName, "The task will suspend the execution until the button is pressed");
+                    a.Set(x => x.TaskDescription, "Personal data for the user to be on boarded.");
                 }, userDetails =>
                 {
                     userDetails.When("Next")
                         .Then<UserTaskSignal>(a =>
                         {
                             a.Set(x => x.Signal, "userOnBoard");
-                            a.Set(x => x.TaskName, "Demo Sample3");
-                            a.Set(x => x.TaskTitle, "Dynamic forms");
+                            a.Set(x => x.TaskName, "User On Board");
+                            a.Set(x => x.TaskTitle, "User On Board");
                             a.Set(x => x.UIDefinition,
                                 "Elsa.OnBoardingProcess.PoC.Pages.OnBoarding.UserOnBoard");
                             a.Set(x => x.AllowPrevious,
                                 true);
-                            a.Set(x => x.TaskName, "The task will suspend the execution until the button is pressed");
+                            a.Set(x => x.TaskDescription, "User on board data.");
                             a.Set(x => x.Name, "userOnBoard");
                         }, userOnBoard =>
                         {

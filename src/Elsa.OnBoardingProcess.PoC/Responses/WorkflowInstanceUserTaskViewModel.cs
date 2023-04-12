@@ -27,4 +27,10 @@ public class WorkflowInstanceUserTaskViewModel
     
     [JsonProperty("currentActivityId")]
     public string CurrentActivityId { get; set; } = string.Empty;
+    
+    [JsonProperty("correlation")]
+    public string Correlation { get; set; } = string.Empty;
+    
+    [JsonProperty("startDate")]
+    public DateTime StartDate { get; set; }
 }

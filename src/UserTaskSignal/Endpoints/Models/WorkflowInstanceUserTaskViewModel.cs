@@ -27,5 +27,11 @@ namespace UserTask.AddOns.Endpoints.Models
         
         [JsonProperty("currentActivityId")] 
         internal string CurrentActivityId { get;  set; } = string.Empty;
+        
+        [JsonProperty("correlation")] 
+        internal string Correlation { get;  set; } = string.Empty;
+        
+        [JsonProperty("startDate")] 
+        internal DateTime StartDate { get;  set; }
     }
 }

@@ -18,7 +18,9 @@ namespace UserTask.AddOns.Extensions
                 DefinitionId = x.DefinitionId,
                 UserTasks = x.ConvertToUserTaskViewModels(serverContext),
                 Metadata = x.Metadata,
-                CurrentActivityId = x.BlockingActivities?.FirstOrDefault()?.ActivityId ?? x?.CurrentActivity?.ActivityId ?? string.Empty
+                CurrentActivityId = x.BlockingActivities?.FirstOrDefault()?.ActivityId ?? x?.CurrentActivity?.ActivityId ?? string.Empty,
+                Correlation = x.CorrelationId,
+                StartDate = x.CreatedAt.ToDateTimeUtc()
             })
             );
             return result;

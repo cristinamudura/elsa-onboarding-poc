@@ -33,13 +33,13 @@ namespace UserTask.AddOns.Endpoints
         private readonly IWorkflowDefinitionStore workflowDefinitionStore;
 
         public UserTaskSignalController(IUserTaskSignalInvoker invoker,
-                                        IWorkflowRegistry workflowRegistry,
-                                        ITriggerFinder triggerFinder,
-                                        IBookmarkFinder bookmarkFinder,
-                                        IWorkflowDefinitionStore workflowDefinitionStore,
-                                        IWorkflowInstanceStore workflowInstanceStore,
-                                        IServiceScopeFactory scopeFactory,
-                                        ServerContext serverContext)
+            IWorkflowRegistry workflowRegistry,
+            ITriggerFinder triggerFinder,
+            IBookmarkFinder bookmarkFinder,
+            IWorkflowDefinitionStore workflowDefinitionStore,
+            IWorkflowInstanceStore workflowInstanceStore,
+            IServiceScopeFactory scopeFactory,
+            ServerContext serverContext)
         {
             this.workflowInstanceStore = workflowInstanceStore;
             this.scopeFactory = scopeFactory;
@@ -58,7 +58,7 @@ namespace UserTask.AddOns.Endpoints
             Summary = "Signals all workflows waiting on the specified signal name synchronously.",
             Description = "Signals all workflows waiting on the specified signal name synchronously.",
             OperationId = "UsertaskSignals.Execute",
-            Tags = new[] { "UsertaskSignals" })
+            Tags = new[] {"UsertaskSignals"})
         ]
         public async Task<IActionResult> Handle(string signalName, ExecuteSignalRequest request,
             CancellationToken cancellationToken = default)
@@ -72,13 +72,13 @@ namespace UserTask.AddOns.Endpoints
         [ElsaJsonFormatter]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteSignalResponse))]
         [SwaggerOperation(
-           Summary = "Signals all workflows waiting on the specified signal name asynchronously.",
-           Description = "Signals all workflows waiting on the specified signal name asynchronously.",
-           OperationId = "UsertaskSignals.Dispatch",
-           Tags = new[] { "UsertaskSignals" })
-       ]
+            Summary = "Signals all workflows waiting on the specified signal name asynchronously.",
+            Description = "Signals all workflows waiting on the specified signal name asynchronously.",
+            OperationId = "UsertaskSignals.Dispatch",
+            Tags = new[] {"UsertaskSignals"})
+        ]
         public async Task<IActionResult> HandleDispatch(string signalName, ExecuteSignalRequest request,
-           CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default)
         {
             var collectedWorkflows = await invoker.DispatchWorkflowsAsync(signalName, request.Input,
                 request.WorkflowInstanceId, request.CorrelationId, cancellationToken);
@@ -89,73 +89,94 @@ namespace UserTask.AddOns.Endpoints
         // [ElsaJsonFormatter]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteSignalResponse))]
         [SwaggerOperation(
-           Summary = "Gets all workflows waiting any usertaks signal",
-           Description = "return a list of workflow instances",
-           OperationId = "UsertaskSignals.Query",
-           Tags = new[] { "UsertaskSignals" })
-       ]
-        public async Task<IActionResult> CollectWaitingWorkflowInstances([FromQuery] string? workflowinstanceId, CancellationToken cancellationToken = default)
+            Summary = "Gets all workflows waiting any usertaks signal",
+            Description = "return a list of workflow instances",
+            OperationId = "UsertaskSignals.Query",
+            Tags = new[] {"UsertaskSignals"})
+        ]
+        public async Task<IActionResult> CollectWaitingWorkflowInstances([FromQuery] string? workflowinstanceId,
+            CancellationToken cancellationToken = default)
         {
-            var bookmarkResults = await bookmarkFinder.FindBookmarksByTypeAsync(typeof(UserTaskSignalBookmark).GetSimpleAssemblyQualifiedName());
-            var workflowInstanceIds = new WorkflowInstanceIdsSpecification(bookmarkResults.Select(x => x.WorkflowInstanceId).ToList());
+            var bookmarkResults =
+                await bookmarkFinder.FindBookmarksByTypeAsync(typeof(UserTaskSignalBookmark)
+                    .GetSimpleAssemblyQualifiedName());
+            var workflowInstanceIds =
+                new WorkflowInstanceIdsSpecification(bookmarkResults.Select(x => x.WorkflowInstanceId).ToList());
             if (workflowinstanceId != null)
             {
                 if (bookmarkResults.All(b => b.WorkflowInstanceId != workflowinstanceId))
                 {
-                    var workflow = await workflowInstanceStore.FindManyAsync(new WorkflowInstanceIdsSpecification(new List<string> { workflowinstanceId }), null, null, cancellationToken);
-                    return Ok(workflow.ConvertToWorkflowInstanceUsertaskViewModels(serverContext, new List<Bookmark>()));
+                    var workflow = await workflowInstanceStore.FindManyAsync(
+                        new WorkflowInstanceIdsSpecification(new List<string> {workflowinstanceId}), null, null,
+                        cancellationToken);
+                    return Ok(workflow.ConvertToWorkflowInstanceUsertaskViewModels(serverContext,
+                        new List<Bookmark>()));
                 }
                 else
                 {
-                    workflowInstanceIds = new WorkflowInstanceIdsSpecification(new List<string> { workflowinstanceId });
+                    workflowInstanceIds = new WorkflowInstanceIdsSpecification(new List<string> {workflowinstanceId});
                 }
             }
-            var workflowInstances = await workflowInstanceStore.FindManyAsync(workflowInstanceIds, null, null, cancellationToken);
-            var viewmodelResult = workflowInstances.ConvertToWorkflowInstanceUsertaskViewModels(serverContext, bookmarkResults);
+
+            var workflowInstances =
+                await workflowInstanceStore.FindManyAsync(workflowInstanceIds, null, null, cancellationToken);
+            var viewmodelResult =
+                workflowInstances.ConvertToWorkflowInstanceUsertaskViewModels(serverContext, bookmarkResults);
             return Ok(viewmodelResult.ToList());
         }
 
         [HttpGet("triggers")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteSignalResponse))]
         [SwaggerOperation(
-       Summary = "Gets all Triggers that await a usertask start activity.",
-       Description = "return a list of usertask Triggers",
-       OperationId = "CustomSignals.Query",
-       Tags = new[] { "UsertaskSignals" })
-       ]
+            Summary = "Gets all Triggers that await a usertask start activity.",
+            Description = "return a list of usertask Triggers",
+            OperationId = "CustomSignals.Query",
+            Tags = new[] {"UsertaskSignals"})
+        ]
         public async Task<IActionResult> Triggers(CancellationToken cancellationToken = default)
         {
             using var scope = scopeFactory.CreateScope();
 
-            var triggerResults = await triggerFinder.FindTriggersByTypeAsync(typeof(UserTaskSignalBookmark).GetSimpleAssemblyQualifiedName(), "");
-            var ids = triggerResults.Select(x => new { WorkflowDefinitionId = x.WorkflowDefinitionId, ActivityId = x.ActivityId }).ToList();
+            var triggerResults =
+                await triggerFinder.FindTriggersByTypeAsync(
+                    typeof(UserTaskSignalBookmark).GetSimpleAssemblyQualifiedName(), "");
+            var ids = triggerResults
+                .Select(x => new {WorkflowDefinitionId = x.WorkflowDefinitionId, ActivityId = x.ActivityId}).ToList();
             var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
             var viewmodelResult = new List<UserTaskViewModel>();
 
             foreach (var trigger in ids)
             {
-                var blueprints = await workflowRegistry.FindManyByDefinitionIds(new List<string> { trigger.WorkflowDefinitionId }, VersionOptions.LatestOrPublished, cancellationToken);
+                var blueprints = await workflowRegistry.FindManyByDefinitionIds(
+                    new List<string> {trigger.WorkflowDefinitionId}, VersionOptions.LatestOrPublished,
+                    cancellationToken);
                 foreach (var blueprint in blueprints)
                 {
+                    var workflowBlueprintWrapper =
+                        await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, blueprint,
+                            cancellationToken);
 
-                    var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, blueprint, cancellationToken);
-
-                    foreach (var activity in workflowBlueprintWrapper.Filter<UserTaskSignal>().Where(a => a.ActivityBlueprint.Id == trigger.ActivityId))
+                    foreach (var activity in workflowBlueprintWrapper.Filter<UserTaskSignal>()
+                                 .Where(a => a.ActivityBlueprint.Id == trigger.ActivityId))
                     {
                         viewmodelResult.Add(new UserTaskViewModel
                         {
                             TaskTitle = await activity.EvaluatePropertyValueAsync(x => x.TaskTitle, cancellationToken),
                             Signal = await activity.EvaluatePropertyValueAsync(x => x.Signal, cancellationToken),
-                            UIDefinition = await activity.EvaluatePropertyValueAsync(x => x.UIDefinition, cancellationToken),
+                            UIDefinition =
+                                await activity.EvaluatePropertyValueAsync(x => x.UIDefinition, cancellationToken),
                             WorkflowInstanceId = null,
                             EngineId = serverContext.EngineId,
-                            TaskDescription = await activity.EvaluatePropertyValueAsync(x => x.TaskDescription, cancellationToken),
+                            TaskDescription =
+                                await activity.EvaluatePropertyValueAsync(x => x.TaskDescription, cancellationToken),
                             TaskName = await activity.EvaluatePropertyValueAsync(x => x.TaskName, cancellationToken),
-                            AllowPrevious = await activity.EvaluatePropertyValueAsync(x => x.AllowPrevious, cancellationToken),
+                            AllowPrevious =
+                                await activity.EvaluatePropertyValueAsync(x => x.AllowPrevious, cancellationToken),
                         });
                     }
                 }
             }
+
             return Ok(viewmodelResult);
         }
 
@@ -164,28 +185,28 @@ namespace UserTask.AddOns.Endpoints
         // [ElsaJsonFormatter]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteSignalResponse))]
         [SwaggerOperation(
-          Summary = "Gets all workflows waiting for a specific signal to be returned",
-          Description = "return a list of workflow instances",
-          OperationId = "CustomSignals.Query",
-          Tags = new[] { "UsertaskSignals" })
-      ]
+            Summary = "Gets all workflows waiting for a specific signal to be returned",
+            Description = "return a list of workflow instances",
+            OperationId = "CustomSignals.Query",
+            Tags = new[] {"UsertaskSignals"})
+        ]
         public async Task<IActionResult> Collect(string signalName,
-          CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default)
         {
             string normalizedSignal = signalName.ToLowerInvariant();
 
-            var bookmarkFilter = new UserTaskSignalBookmark { Signal = normalizedSignal };
-            var bookmarkResults = await bookmarkFinder.FindBookmarksAsync(nameof(UserTaskSignal), new[] { bookmarkFilter });
-            var workflowInstanceIds = new WorkflowInstanceIdsSpecification(bookmarkResults.Select(x => x.WorkflowInstanceId).ToList());
-            var workflowInstances = await workflowInstanceStore.FindManyAsync(workflowInstanceIds, null, null, cancellationToken);
+            var bookmarkFilter = new UserTaskSignalBookmark {Signal = normalizedSignal};
+            var bookmarkResults =
+                await bookmarkFinder.FindBookmarksAsync(nameof(UserTaskSignal), new[] {bookmarkFilter});
+            var workflowInstanceIds =
+                new WorkflowInstanceIdsSpecification(bookmarkResults.Select(x => x.WorkflowInstanceId).ToList());
+            var workflowInstances =
+                await workflowInstanceStore.FindManyAsync(workflowInstanceIds, null, null, cancellationToken);
 
             var viewmodelResult = workflowInstances.ConvertToUsertaskViewModels(serverContext);
             normalizedSignal = null;
             return Ok(viewmodelResult.ToList());
         }
-
-
-
     }
 
     //next section is needed for a bug in the Elsa core implementation.
@@ -198,6 +219,7 @@ namespace UserTask.AddOns.Endpoints
 
         public IEnumerable<string> WorkflowDefinitionIds { get; }
 
-        public override Expression<Func<WorkflowDefinition, bool>> ToExpression() => workflowDefinition => WorkflowDefinitionIds.Contains(workflowDefinition.Id);
+        public override Expression<Func<WorkflowDefinition, bool>> ToExpression() => workflowDefinition =>
+            WorkflowDefinitionIds.Contains(workflowDefinition.Id);
     }
 }

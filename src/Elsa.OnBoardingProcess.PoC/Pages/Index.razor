@@ -28,7 +28,6 @@
 
     private async Task StartOnBoardingProcess()
     {
-    //change this to start a workflow instance ( dispatch) instead of assuming we start with a signal
         var workflowsResponse = await workflowDefinitionService.StartWorkflowDefinition(processIdentifier, correlation);
         navigationManager.NavigateTo($"onboarding/{workflowsResponse.WorkflowInstanceId}");
     }
