@@ -1,0 +1,77 @@
+﻿@page "/onboarding/{workflowInstanceId}"
+
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json.Nodes
+
+@implements IDisposable
+
+@inject HubConnection HubConnection
+
+<h2>Processing work...</h2>
+<p>@latestNotification?.Description</p>
+@latest
+
+
+@code {
+
+    private JsonObject dynamicComponentData;
+
+    private DynamicComponent dc;
+
+    private string latest;
+
+    [Parameter]
+    public string workflowInstanceId { get; set; } = string.Empty;
+
+    //private UserTaskViewModel? userTask;
+
+    private WorkflowInstanceInfo? latestNotification;
+    //private WorkflowInstanceUserTaskViewModel workflowInstance;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //await LoadTask();
+        
+        await HubConnection.InvokeAsync("LeaveWorkflowInstanceGroup", workflowInstanceId);
+        
+        //setup notifications listener
+        HubConnection.On<WorkflowInstanceInfo>("WorkflowInstanceUpdate", async notification => { await UpdateForNotification(notification); });
+        await HubConnection.InvokeAsync("JoinWorkflowInstanceGroup", workflowInstanceId);
+    }
+    
+
+    private async Task UpdateForNotification(WorkflowInstanceInfo notification)
+    {
+        latest = DateTime.UtcNow.ToString();
+        latestNotification = notification;
+        // if (notification.IsUsertask && !HasUserTask())
+        // {
+        //     await LoadTask();
+        // }
+        await InvokeAsync(() => { StateHasChanged(); });
+    }
+
+    //
+    // private async Task LoadTask()
+    // {
+    //     workflowInstance = await userTaskService.GetUserTasksFor(workflowInstanceId);
+    //     userTask = workflowInstance?.UserTasks?.FirstOrDefault();
+    // }
+
+    public async void Dispose()
+    {
+        await HubConnection.InvokeAsync("LeaveWorkflowInstanceGroup", workflowInstanceId);
+    }
+
+    private class WorkflowInstanceInfo
+    {
+        public string WorkflowInstanceId { get; set; }
+        public string WorkflowState { get; set; }
+        public string ActivityId { get; set; }
+        public string? ActivityName { get; set; }
+        public string Action { get; set; }
+        public bool IsUsertask { get; set; }
+        public string Description { get; set; }
+        private Dictionary<string,object> Metadata { get; set; }
+    }
+}

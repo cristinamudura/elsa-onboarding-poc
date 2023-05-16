@@ -2,12 +2,15 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Workflows.Core.Notifications;
 using ElsaEngineV3.Workflows;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using UserTaskV3.Contracts;
 using UserTaskV3.Endpoints.UserTasks.Trigger;
+using UserTaskV3.Hubs;
+using UserTaskV3.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();
@@ -75,6 +78,10 @@ services.AddCors(cors => {
             policy.WithMethods(methods.ToArray());
     });
 });
+// Notifications
+services.AddSignalR();
+services.AddNotificationHandler<WorkflowNotifier, ActivityExecuted>();
+services.AddNotificationHandler<WorkflowNotifier, ActivityExecuting>();
 
 // Razor Pages.
 services.AddRazorPages(options => options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute()));
@@ -101,4 +108,10 @@ app.UseWorkflowsApi();
 app.UseWorkflows();
 app.MapRazorPages();
 app.UseSwaggerGen();
+
+app.UseEndpoints(endpoints =>
+{
+    // SignalR -> Mapping to hub to endpoint 
+    endpoints.MapHub<WorkflowInstanceInfoHub>("/usertask-info");
+});
 app.Run();

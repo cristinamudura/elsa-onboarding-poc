@@ -1,13 +1,52 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.SignalR.Client;
 using WebApp.V3.Data;
+using WebApp.V3.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddSingleton<WeatherForecastService>();
+var configuration = builder.Configuration;
+var services = builder.Services;
+
+
+var baseAddress = configuration["UserTaskService:BaseAddress"];
+
+
+//signalR for notifications 
+services.AddSingleton<HubConnection>(sp => {
+    return new HubConnectionBuilder()
+        .WithUrl($"{baseAddress}/usertask-info")
+        .WithAutomaticReconnect()
+        .Build();
+});
+
+services.AddHttpClient("WorkflowDefinitionServiceClient",
+    client =>
+    {
+        // Set the base address of the named client.
+        client.BaseAddress = new Uri(baseAddress);
+    });
+
+services.AddHttpClient("AuthorizationServiceClient",
+    client =>
+    {
+        // Set the base address of the named client.
+        client.BaseAddress = new Uri(baseAddress);
+    });
+
+services.AddHttpClient("UserTaskService",
+    client =>
+    {
+        // Set the base address of the named client.
+        client.BaseAddress = new Uri(baseAddress);
+    });
+
+services.AddTransient<IAuthorizationService, AuthorizationService>();
+services.AddTransient<IWorkflowDefinitionService, WorkflowDefinitionService>();
 
 var app = builder.Build();
 

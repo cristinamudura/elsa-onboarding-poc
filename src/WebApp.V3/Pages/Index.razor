@@ -1,9 +1,35 @@
 ﻿@page "/"
+@using WebApp.V3.Services
 
-<PageTitle>Index</PageTitle>
+@inject IWorkflowDefinitionService workflowDefinitionService
+@inject NavigationManager navigationManager;
 
-<h1>Hello, world!</h1>
+<h1>Welcome to our onboarding process!</h1>
 
-Welcome to your new app.
+<form class="form-horizontal">
+    <div class="form-group">
+        <label for="processId">Process Identifier:</label>
+        <input id="processId" class="form-control" @bind="@processIdentifier"/>
+    </div>
+    <div class="form-group">
+        <label for="correlation">Correlation:</label>
+        <input id="correlation" class="form-control" @bind="@correlation"/>
+    </div>
+    <div class="form-group">
+    </div>
+</form>
 
-<SurveyPrompt Title="How is Blazor working for you?"/>
+<button class="btn btn-primary" onclick=@StartOnBoardingProcess>Start OnBoarding Process</button>
+
+
+@code{
+    private string processIdentifier = "d0668ad8ab3d46f4a5bdd99a3c61e4ff";
+    private string? correlation;
+
+    private async Task StartOnBoardingProcess()
+    {
+        var workflowsResponse = await workflowDefinitionService.StartWorkflowDefinition(processIdentifier, correlation);
+        navigationManager.NavigateTo($"onboarding/{workflowsResponse.WorkflowInstanceId}");
+    }
+
+}
