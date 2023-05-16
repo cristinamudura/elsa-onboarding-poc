@@ -72,6 +72,8 @@ namespace ElsaEngine
                     
                     // Notifications
                     endpoints.MapBlazorHub();
+                    
+                    // SignalR -> Mapping to hub to endpoint 
                     endpoints.MapHub<WorkflowInstanceInfoHub>("/usertask-info");
                 });
             app.Run();
