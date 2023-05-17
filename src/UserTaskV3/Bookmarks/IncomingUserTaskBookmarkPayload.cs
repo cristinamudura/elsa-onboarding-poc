@@ -13,6 +13,6 @@ public class IncomingUserTaskBookmarkPayload
     public string EventName
     {
         get => _eventName;
-        init => _eventName = value.ToLowerInvariant();
+        init => _eventName = value?.ToLowerInvariant()??string.Empty;
     }
 }
