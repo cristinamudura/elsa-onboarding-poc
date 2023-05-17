@@ -1,7 +1,4 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
-using WebApp.V3.Data;
 using WebApp.V3.Services;
 
 var builder = WebApplication.CreateBuilder(args);

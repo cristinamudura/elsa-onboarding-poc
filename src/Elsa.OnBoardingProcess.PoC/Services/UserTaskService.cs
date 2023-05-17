@@ -28,13 +28,6 @@ public class UserTaskService
         return await httpClient.GetFromJsonAsync<WorkflowInstanceUserTaskViewModel[]>($"/v1/usertask-signals");
     }
 
-    public async Task<UserTaskViewModel[]> GetWorkflowsForSignals(List<string> signals)
-    {
-        var result = new List<UserTaskViewModel>();
-        await Task.WhenAll(signals.Select(async i => result.AddRange(await GetWorkflowsForSignal(i))));
-        return result.ToArray();
-    }
-
     public async Task<WorkflowInstanceUserTaskViewModel> GetUserTasksFor(string workflowinstanceId)
     {
         var httpClient = httpClientFactory.CreateClient("UserTaskService");

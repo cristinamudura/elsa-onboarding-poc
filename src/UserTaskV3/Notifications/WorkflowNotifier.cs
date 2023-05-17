@@ -50,7 +50,12 @@ public class WorkflowNotifier :
         //     IsUsertask = IsUsertask(activityNotification.Activity.GetType()),
         //     Description = $"{(string.IsNullOrEmpty(activityNotification.ActivityBlueprint.Name) ? activityNotification.Activity.Id : activityNotification.ActivityBlueprint.Name)}"
         // };
-        return new WorkflowInstanceInfo();
+        return new WorkflowInstanceInfo()
+        {
+            WorkflowInstanceId = activityNotification.WorkflowExecutionContext.Id,
+            WorkflowState = activityNotification.WorkflowExecutionContext.Status.ToString(),
+            Metadata = activityNotification.WorkflowExecutionContext.TransientProperties
+        };
     }
     
     private async Task SendNotification(string workflowInstanceId, WorkflowInstanceInfo workflowInstanceInfo)

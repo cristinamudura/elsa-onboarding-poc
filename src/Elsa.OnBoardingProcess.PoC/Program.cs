@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
-using Elsa.OnBoardingProcess.PoC.Data;
 using Elsa.OnBoardingProcess.PoC.Services;
 using Microsoft.AspNetCore.SignalR.Client;
 
