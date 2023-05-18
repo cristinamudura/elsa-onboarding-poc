@@ -8,7 +8,7 @@ using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 using UserTaskV3.Bookmarks;
 
-namespace UserTaskV3.Activities;
+namespace UserTaskV3.Activities; 
 
 [Activity(
     "UserOnBoard",
