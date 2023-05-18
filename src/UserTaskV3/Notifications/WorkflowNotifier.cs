@@ -2,6 +2,7 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
 using Microsoft.AspNetCore.SignalR;
+using UserTaskV3.Activities;
 using UserTaskV3.Hubs;
 
 namespace UserTaskV3.Notifications;
@@ -19,8 +20,6 @@ public class WorkflowNotifier :
     
     public async Task HandleAsync(ActivityExecuting notification, CancellationToken cancellationToken)
     {
-        // find the workflow instance?
-        
         await SendNotification(
             notification.ActivityExecutionContext.WorkflowExecutionContext.Id,
             GetInfo(notification.ActivityExecutionContext, "Executing")
@@ -50,11 +49,22 @@ public class WorkflowNotifier :
         //     IsUsertask = IsUsertask(activityNotification.Activity.GetType()),
         //     Description = $"{(string.IsNullOrEmpty(activityNotification.ActivityBlueprint.Name) ? activityNotification.Activity.Id : activityNotification.ActivityBlueprint.Name)}"
         // };
+        IDictionary<string,object> test = new Dictionary<string, object>();
+        UserTask usertask = activityNotification.Activity as UserTask;
+        if (usertask != null)
+        {
+            test = usertask.Metadata;
+        }
         return new WorkflowInstanceInfo()
         {
+            ActivityId = activityNotification.Activity.Id,
+            ActivityName = activityNotification.ActivityDescriptor.DisplayName,
             WorkflowInstanceId = activityNotification.WorkflowExecutionContext.Id,
             WorkflowState = activityNotification.WorkflowExecutionContext.Status.ToString(),
-            Metadata = activityNotification.WorkflowExecutionContext.TransientProperties
+            Metadata = test,
+            Action = $"Activity.{action}",
+            IsUsertask = activityNotification.Activity.Type == "UserOnBoard.UserTask",
+            Description = $"{(string.IsNullOrEmpty(activityNotification.ActivityDescriptor.DisplayName) ? activityNotification.Activity.Id : activityNotification.ActivityDescriptor.DisplayName)}"
         };
     }
     
