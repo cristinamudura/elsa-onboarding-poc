@@ -7,10 +7,10 @@ using ElsaEngineV3.Workflows;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cors.Infrastructure;
-using UserTaskV3.Contracts;
-using UserTaskV3.Endpoints.UserTasks.Trigger;
+using UserTaskV3.Activities;
 using UserTaskV3.Hubs;
 using UserTaskV3.Notifications;
+using UserTaskV3.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();

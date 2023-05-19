@@ -9,5 +9,7 @@ public class WorkflowInstanceInfo
     public string Action { get; internal set; }
     public bool IsUsertask { get; internal set; }
     public string Description { get; internal set; }
-    public IDictionary<object,object> Metadata { get; set; }
+    public IDictionary<string,object> Metadata { get; set; }
+    
+    public string UIDefinition { get; set; }
 }

@@ -6,7 +6,7 @@ using Elsa.Workflows.Runtime.Models.Requests;
 using UserTaskV3.Activities;
 using UserTaskV3.Bookmarks;
 
-namespace UserTaskV3.Contracts;
+namespace UserTaskV3.Services;
 
 public class UserTaskPublisher : IUserTaskPublisher
 {
@@ -23,9 +23,9 @@ public class UserTaskPublisher : IUserTaskPublisher
     }
     
     /// <inheritdoc />
-    public async Task PublishAsync(string eventName, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(string eventName, string taskName, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var eventBookmark = new IncomingUserTaskBookmarkPayload(eventName);
+        var eventBookmark = new IncomingUserTaskBookmarkPayload(eventName, taskName);
         var options = new TriggerWorkflowsRuntimeOptions(correlationId, workflowInstanceId, input);
         await _workflowRuntime.TriggerWorkflowsAsync<UserTask>(eventBookmark, options, cancellationToken);
     }
