@@ -1,20 +1,36 @@
 ﻿@page "/onboarding/{workflowInstanceId}"
 
 @using Microsoft.AspNetCore.SignalR.Client
-@using System.Text.Json.Nodes
+@using Newtonsoft.Json.Linq
+@using WebApp.V3.Components
+@using WebApp.V3.Services
 
 @implements IDisposable
 
 @inject HubConnection HubConnection
+@inject IUserTaskService UserTaskService; 
 
-<h2>Processing work...</h2>
-<p>@latestNotification?.Description</p>
-@latest
+@if (HasUserTask())
+{
+    <div class="border border-primary my-1 p-1">
+        <DynamicComponent @ref="dc" Type="@Type.GetType(userTaskViewModel.UIDefinition)"/>
+        @if (userTaskViewModel.AllowPrevious)
+        {
+            <button class="btn btn-primary" onclick="@GoToPrevious">Previous</button>
+        }
+        <button class="btn btn-primary" onclick="@Continue">Continue</button>
+    </div>
+}
+else
+{
+    <h2>Processing work...</h2>
+    <p>@latestNotification?.Description</p>
+}
 
 
 @code {
 
-    private JsonObject dynamicComponentData;
+    private JToken dynamicComponentData;
 
     private DynamicComponent dc;
 
@@ -24,10 +40,11 @@
     public string workflowInstanceId { get; set; } = string.Empty;
 
     private WorkflowInstanceInfo? latestNotification;
+    private UserTaskViewModel? userTaskViewModel;
 
     protected override async Task OnInitializedAsync()
     {
-        //await LoadTask();
+        await LoadTask();
         
         await HubConnection.InvokeAsync("LeaveWorkflowInstanceGroup", workflowInstanceId);
         
@@ -36,30 +53,66 @@
         await HubConnection.InvokeAsync("JoinWorkflowInstanceGroup", workflowInstanceId);
     }
     
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (dc != null && dc.Instance != null && userTaskViewModel != null)
+        {
+            if (userTaskViewModel.Metadata.ContainsKey(userTaskViewModel.ActivityId))
+            {
+                var component = dc.Instance as ICustomDynamicComponent;
+                component.SetValue(userTaskViewModel.Metadata[userTaskViewModel.ActivityId]);
+            }
+        }
+    }
+    
+    private async Task GoToPrevious()
+    {
+        var component = dc.Instance as ICustomDynamicComponent;
+        dynamicComponentData = JToken.FromObject(component.GetValue());
+        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, userTaskViewModel?.ActivityId, true, userTaskViewModel?.Signal, dynamicComponentData);
+        TaskFinished();
+    }
+    
+    private async Task Continue()
+    {
+        var component = dc.Instance as ICustomDynamicComponent;
+        dynamicComponentData = JToken.FromObject(component.GetValue());
+        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, userTaskViewModel?.ActivityId,false, userTaskViewModel.Signal, dynamicComponentData);
+        TaskFinished();
+    }
+    
+    private void TaskFinished()
+    {
+        userTaskViewModel = null;
+    }
 
     private async Task UpdateForNotification(WorkflowInstanceInfo notification)
     {
         latest = DateTime.UtcNow.ToString();
         latestNotification = notification;
-        // if (notification.IsUsertask && !HasUserTask())
-        // {
-        //     await LoadTask();
-        // }
+        if (notification.IsUsertask && !HasUserTask())
+        {
+            await LoadTask();
+        }
         await InvokeAsync(() => { StateHasChanged(); });
     }
 
-    //
-    // private async Task LoadTask()
-    // {
-    //     workflowInstance = await userTaskService.GetUserTasksFor(workflowInstanceId);
-    //     userTask = workflowInstance?.UserTasks?.FirstOrDefault();
-    // }
+    
+    private async Task LoadTask()
+    {
+        userTaskViewModel = await UserTaskService.GetUserTasksFor(workflowInstanceId);
+    }
 
     public async void Dispose()
     {
         await HubConnection.InvokeAsync("LeaveWorkflowInstanceGroup", workflowInstanceId);
     }
 
+    private bool HasUserTask()
+    {
+        return userTaskViewModel != null;
+    }
+    
     private class WorkflowInstanceInfo
     {
         public string WorkflowInstanceId { get; set; }

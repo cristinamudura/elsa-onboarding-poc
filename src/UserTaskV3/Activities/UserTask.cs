@@ -1,12 +1,11 @@
-using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 using UserTaskV3.Bookmarks;
+using UserTaskV3.Models;
 
 namespace UserTaskV3.Activities; 
 
@@ -15,7 +14,7 @@ namespace UserTaskV3.Activities;
     "UserOnBoard")]
 [PublicAPI]
 [FlowNode("Next", "Previous")]
-public class UserTask : Trigger<object?>, IActivityWithResult
+public class UserTask : Trigger<object?>
 {
     [JsonConstructor]
     public UserTask()
@@ -26,33 +25,28 @@ public class UserTask : Trigger<object?>, IActivityWithResult
     public Input<string> UIDefinition { get; set; } = default!;
 
     [Input(Description = "The name of the event to listen for.")]
-    public Input<string>? EventName { get; set; } = default!;
+    public Input<string>? EventName { get; set; } = new(string.Empty);
 
     [Input(Description = "Allow previous")]
-    public Input<bool>? AllowPrevious { get; set; }
+    public Input<bool>? AllowPrevious { get; set; } = new(false);
      
     [Input(Description = "The user task name that identifies it.")]
     public Input<string> UserTaskName { get; set; } = default!;
 
     public Output<object?> UserTaskData { get; set; } = default!;
   
-    Output? IActivityWithResult.Result { get ; set ; }
-
     protected override object GetTriggerPayload(TriggerIndexingContext context)
     {
         var eventName = EventName.Get(context.ExpressionExecutionContext);
-        return new IncomingUserTaskBookmarkPayload(eventName);
+        return new IncomingUserTaskBookmarkPayload(eventName, Id);
     }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var eventName = context.Get(EventName)!;
-        Debug.WriteLine($"ExecuteAsync: {eventName}");
-
         if (!context.IsTriggerOfWorkflow())
         {
-            context.CreateBookmark(new IncomingUserTaskBookmarkPayload(eventName), OnResume);
-            return;
+            context.CreateBookmark(new IncomingUserTaskBookmarkPayload(eventName, Id), OnResume);
         }
     }
 
@@ -61,12 +55,14 @@ public class UserTask : Trigger<object?>, IActivityWithResult
         var executionContext = context;
  
         var allowPrevious = executionContext.Get(AllowPrevious);
-        var input = executionContext.Input;
-        context.SetResult(input["UserTaskInput"]);
-        var gotoPrevious = input.ContainsKey("GoToPrevious")? (bool)input["GoToPrevious"] : false;
-        AddOrUpdateMetadata(executionContext, input);
+        
+        var userTaskInput = executionContext.GetInput<UserTaskSignalInput>();
+        
+        context.Set(UserTaskData, userTaskInput.Input);
 
-        if (allowPrevious && gotoPrevious)
+        AddOrUpdateMetadata(executionContext, userTaskInput.Input);
+
+        if (allowPrevious && userTaskInput.GoToPrevious)
         {
             await context.CompleteActivityWithOutcomesAsync("Previous");
             return;
@@ -76,13 +72,12 @@ public class UserTask : Trigger<object?>, IActivityWithResult
 
     private void AddOrUpdateMetadata(ActivityExecutionContext context, object data)
     {
-        if (context.WorkflowExecutionContext.TransientProperties.ContainsKey(context.Activity.Id))
+        if (context.WorkflowExecutionContext.Properties.ContainsKey(context.Activity.Id))
         {
-            context.WorkflowExecutionContext.TransientProperties[context.Activity.Id] = data;
+            context.WorkflowExecutionContext.Properties[context.Activity.Id] = data;
             return;
         }
 
-        context.WorkflowExecutionContext.TransientProperties.Add(context.Activity.Id, data);
+        context.WorkflowExecutionContext.Properties.Add(context.Activity.Id, data);
     }
 }
-

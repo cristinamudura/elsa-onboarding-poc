@@ -35,15 +35,18 @@ services.AddHttpClient("AuthorizationServiceClient",
         client.BaseAddress = new Uri(baseAddress);
     });
 
-services.AddHttpClient("UserTaskService",
+services.AddHttpClient("UserTaskServiceClient",
     client =>
     {
         // Set the base address of the named client.
         client.BaseAddress = new Uri(baseAddress);
     });
 
+// Add the services needed to talk to Elsa Server
 services.AddTransient<IAuthorizationService, AuthorizationService>();
 services.AddTransient<IWorkflowDefinitionService, WorkflowDefinitionService>();
+services.AddTransient<IUserTaskService, UserTaskService>();
+
 
 var app = builder.Build();
 

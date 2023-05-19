@@ -10,4 +10,6 @@ public class WorkflowInstanceInfo
     public bool IsUsertask { get; internal set; }
     public string Description { get; internal set; }
     public IDictionary<string,object> Metadata { get; set; }
+    
+    public string UIDefinition { get; set; }
 }
