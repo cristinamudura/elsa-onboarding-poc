@@ -59,7 +59,7 @@ public class UserTask : Trigger<object?>
         var userTaskInput = executionContext.GetInput<UserTaskSignalInput>();
         
         context.Set(UserTaskData, userTaskInput.Input);
-
+        context.JournalData.Add("UserTaskData", userTaskInput.Input);
         AddOrUpdateMetadata(executionContext, userTaskInput.Input);
 
         if (allowPrevious && userTaskInput.GoToPrevious)

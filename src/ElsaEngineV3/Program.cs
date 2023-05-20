@@ -82,6 +82,7 @@ services.AddCors(cors => {
 services.AddSignalR();
 services.AddNotificationHandler<WorkflowNotifier, ActivityExecuted>();
 services.AddNotificationHandler<WorkflowNotifier, ActivityExecuting>();
+services.AddNotificationHandler<WorkflowNotifier, WorkflowExecuted>();
 
 // Razor Pages.
 services.AddRazorPages(options => options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute()));

@@ -10,16 +10,29 @@
 @inject HubConnection HubConnection
 @inject IUserTaskService UserTaskService; 
 
-@if (HasUserTask())
+@if (HasUserTask() && !string.IsNullOrWhiteSpace(userTaskViewModel.UIDefinition))
 {
-    <div class="border border-primary my-1 p-1">
-        <DynamicComponent @ref="dc" Type="@Type.GetType(userTaskViewModel.UIDefinition)"/>
-        @if (userTaskViewModel.AllowPrevious)
-        {
-            <button class="btn btn-primary" onclick="@GoToPrevious">Previous</button>
-        }
-        <button class="btn btn-primary" onclick="@Continue">Continue</button>
-    </div>
+    Type? formType = null;
+    try
+    {
+        formType = Type.GetType(userTaskViewModel.UIDefinition);
+    }
+    catch {}
+    if (formType == null)
+    {
+        <h2>Unknown form to display.</h2>
+    }
+    else
+    {
+        <div class="border border-primary my-1 p-1">
+            <DynamicComponent @ref="dc" Type="@Type.GetType(userTaskViewModel.UIDefinition)"/>
+            @if (userTaskViewModel.AllowPrevious)
+            {
+                <button class="btn btn-primary" onclick="@GoToPrevious">Previous</button>
+            }
+            <button class="btn btn-primary" onclick="@Continue">Continue</button>
+        </div>
+    }
 }
 else
 {
@@ -33,8 +46,6 @@ else
     private JToken dynamicComponentData;
 
     private DynamicComponent dc;
-
-    private string latest;
 
     [Parameter]
     public string workflowInstanceId { get; set; } = string.Empty;
@@ -69,16 +80,20 @@ else
     {
         var component = dc.Instance as ICustomDynamicComponent;
         dynamicComponentData = JToken.FromObject(component.GetValue());
-        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, userTaskViewModel?.ActivityId, true, userTaskViewModel?.Signal, dynamicComponentData);
+        var activityId = userTaskViewModel?.ActivityId ?? string.Empty;
+        var signal = userTaskViewModel?.Signal ?? string.Empty;
         TaskFinished();
+        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, activityId, true, signal, dynamicComponentData);
     }
     
     private async Task Continue()
     {
         var component = dc.Instance as ICustomDynamicComponent;
         dynamicComponentData = JToken.FromObject(component.GetValue());
-        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, userTaskViewModel?.ActivityId,false, userTaskViewModel.Signal, dynamicComponentData);
+        var activityId = userTaskViewModel?.ActivityId ?? string.Empty;
+        var signal = userTaskViewModel?.Signal ?? string.Empty;
         TaskFinished();
+        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, activityId,false, signal, dynamicComponentData);
     }
     
     private void TaskFinished()
@@ -88,13 +103,18 @@ else
 
     private async Task UpdateForNotification(WorkflowInstanceInfo notification)
     {
-        latest = DateTime.UtcNow.ToString();
         latestNotification = notification;
+        
         if (notification.IsUsertask && !HasUserTask())
         {
             await LoadTask();
+            await InvokeAsync(() => { StateHasChanged(); });
         }
-        await InvokeAsync(() => { StateHasChanged(); });
+
+        if (latestNotification.WorkflowState == "Finished")
+        {
+            await InvokeAsync(() => { StateHasChanged(); });
+        }
     }
 
     
@@ -115,13 +135,8 @@ else
     
     private class WorkflowInstanceInfo
     {
-        public string WorkflowInstanceId { get; set; }
         public string WorkflowState { get; set; }
-        public string ActivityId { get; set; }
-        public string? ActivityName { get; set; }
-        public string Action { get; set; }
         public bool IsUsertask { get; set; }
         public string Description { get; set; }
-        private Dictionary<string,object> Metadata { get; set; }
     }
 }

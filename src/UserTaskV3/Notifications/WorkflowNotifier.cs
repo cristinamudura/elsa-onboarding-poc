@@ -8,7 +8,8 @@ namespace UserTaskV3.Notifications;
 
 public class WorkflowNotifier : 
     INotificationHandler<ActivityExecuting>,
-    INotificationHandler<ActivityExecuted>
+    INotificationHandler<ActivityExecuted>,
+    INotificationHandler<WorkflowExecuted>
 {
     private readonly IHubContext<WorkflowInstanceInfoHub, IWorkflowInstanceInfoHub> _hubContext;
 
@@ -59,5 +60,18 @@ public class WorkflowNotifier :
     private async Task SendNotification(string workflowInstanceId, WorkflowInstanceInfo workflowInstanceInfo)
     {
         await _hubContext.Clients.Group(workflowInstanceId).WorkflowInstanceUpdate(workflowInstanceInfo);
+    }
+
+    public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
+    {
+        await SendNotification(
+                notification.WorkflowState.Id,
+             new WorkflowInstanceInfo
+            {
+                WorkflowState = notification.WorkflowState.Status.ToString(),
+                IsUsertask = false,
+                Description = "Workflow finished"
+            }
+        );
     }
 }

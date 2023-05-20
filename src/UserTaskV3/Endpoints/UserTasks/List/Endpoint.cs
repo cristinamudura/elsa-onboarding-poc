@@ -1,7 +1,5 @@
 using Elsa.Abstractions;
-using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
@@ -10,7 +8,7 @@ using UserTaskV3.Bookmarks;
 namespace UserTaskV3.Endpoints.UserTasks.List;
 
 [PublicAPI]
-internal class Endpoint : ElsaEndpoint<Request, Response>
+internal class Endpoint : ElsaEndpoint<Request, Response?>
 {
     private readonly IBookmarkStore _bookmarkStore;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
@@ -31,7 +29,7 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
         ConfigurePermissions("read:user-tasks");
     }
 
-    public override async Task<Response> ExecuteAsync(Request userTaskRequest,
+    public override async Task<Response?> ExecuteAsync(Request userTaskRequest,
         CancellationToken cancellationToken)
     {
         var instanceFilter = new WorkflowInstanceFilter {Id = userTaskRequest.WorkflowInstanceId};
@@ -56,6 +54,7 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
                 ActivityId = payload.ActivityId
             };
         }
-        return new Response();
+
+        return null;
     }
 }
