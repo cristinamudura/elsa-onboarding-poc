@@ -1,6 +1,6 @@
-namespace UserTaskV3.Endpoints.UserTasks.List;
+namespace WebApp.V3.Models;
 
-internal class Response
+public class WorkflowInstanceModel
 {
     public string WorkflowInstanceId { get; set; }
     
@@ -12,3 +12,4 @@ internal class Response
     
     public DateTime CreatedAt { get; set; }
 }
+

@@ -1,5 +1,7 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
@@ -8,7 +10,7 @@ using UserTaskV3.Bookmarks;
 namespace UserTaskV3.Endpoints.UserTasks.List;
 
 [PublicAPI]
-internal class Endpoint : ElsaEndpoint<Request, Response?>
+internal class Endpoint : ElsaEndpointWithoutRequest<IEnumerable<Response>>
 {
     private readonly IBookmarkStore _bookmarkStore;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
@@ -25,36 +27,32 @@ internal class Endpoint : ElsaEndpoint<Request, Response?>
 
     public override void Configure()
     {
-        Get("/user-tasks/instances/{workflowInstanceId}");
+        Get("/user-tasks/instances");
         ConfigurePermissions("read:user-tasks");
     }
 
-    public override async Task<Response?> ExecuteAsync(Request userTaskRequest,
-        CancellationToken cancellationToken)
+    public override async Task<IEnumerable<Response>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var instanceFilter = new WorkflowInstanceFilter {Id = userTaskRequest.WorkflowInstanceId};
-        var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
+        var activityType = ActivityTypeNameHelper.GenerateTypeName<Activities.UserTask>();
+        var bookmarkFilter = new BookmarkFilter { ActivityTypeName = activityType };
 
-        var customUserTask = workflowInstance.WorkflowState.Bookmarks.FirstOrDefault(t => t.Name == "UserOnBoard.UserTask");
-        if (customUserTask != null)
+        var bookmarks = await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken);
+
+        var workflowInstances = bookmarks.Select(b => b.WorkflowInstanceId);
+
+        var response = await _workflowInstanceStore.FindManyAsync(new WorkflowInstanceFilter()
         {
-            var userTaskId = customUserTask.ActivityInstanceId;
-            var activityInfo = workflowInstance.WorkflowState.ActivityExecutionContexts.Single(c => c.Id.Equals(userTaskId));
+            Ids = workflowInstances.ToList()
+        }, cancellationToken);
 
-            var allowPrevious = activityInfo.ActivityState["AllowPrevious"] ?? false;
-
-            var payload = customUserTask.Payload as IncomingUserTaskBookmarkPayload;
-            return new Response
-            {
-                AllowPrevious = (bool)allowPrevious,
-                UserTaskActivityInstanceId = userTaskId,
-                UIDefinition = activityInfo.ActivityState["UIDefinition"].ToString(),
-                Metadata = workflowInstance.WorkflowState.Properties,
-                Signal = activityInfo.ActivityState["EventName"].ToString(),
-                ActivityId = payload.ActivityId
-            };
-        }
-
-        return null;
+        
+        return response.Select( i => new Response()
+        {
+            CorrelationId = i.CorrelationId,
+            CreatedAt = i.CreatedAt.DateTime,
+            LastExecutedAt = i.LastExecutedAt.Value.DateTime,
+            Name = i.Name,
+            WorkflowInstanceId = i.Id
+        });
     }
 }

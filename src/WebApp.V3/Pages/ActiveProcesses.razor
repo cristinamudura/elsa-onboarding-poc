@@ -1,0 +1,89 @@
+﻿@page "/active-processes"
+@using Microsoft.AspNetCore.Components
+@using WebApp.V3.Models
+@using WebApp.V3.Services
+
+@inject IUserTaskService userTaskService;
+@inject IJSRuntime JSRuntime
+@inject NavigationManager navigationManager;
+
+<h1>Active processes</h1>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Created At</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in workflowInstances)
+    {
+        <tr>
+            <td>@item.CreatedAt </td>
+            <td>
+                <button class="btn btn-primary" @onclick="(() => ShowEditTenantModal(item))">Resume</button>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+
+<!-- Modal -->
+<div class="modal" tabindex="-1" style="display: @(modalVisible ? "block" : "none");">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <input type="hidden" @bind="currentWorkflowInstance.WorkflowInstanceId"/>
+                <div class="mb-3">
+                    <label for="correlation" class="form-label">Correlation</label>
+                    <input type="text" class="form-control" id="correlation" @bind="correlationId"/>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseEditModal">Close</button>
+                <button type="button" class="btn btn-primary" @onclick="CheckCorrelation">Resume</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code{
+    private List<WorkflowInstanceModel> workflowInstances = new List<WorkflowInstanceModel>();
+    private string selectedItemName;
+    private string correlationId; 
+    private WorkflowInstanceModel currentWorkflowInstance = new();
+    private bool modalVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await userTaskService.GetWorkflowsWaitingOnUserTask();
+        workflowInstances = response.ToList();
+    }
+
+    private void ShowEditTenantModal(WorkflowInstanceModel workflowInstance)
+    {
+        currentWorkflowInstance = workflowInstance;
+        modalVisible = true;
+    }
+    
+    private async Task CheckCorrelation()
+    {
+        if (currentWorkflowInstance.CorrelationId == correlationId)
+        {
+            navigationManager.NavigateTo($"onboarding/{currentWorkflowInstance.WorkflowInstanceId}");
+        }
+        else
+        {
+            correlationId = string.Empty;
+            await JSRuntime.InvokeVoidAsync("alert", $"Correlation does not match.");
+        }
+    }
+    
+    private void CloseEditModal()
+    {
+        modalVisible = false;
+    }
+}

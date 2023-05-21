@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using WebApp.V3.Models;
 
 namespace WebApp.V3.Services;
 
@@ -57,6 +58,17 @@ public class UserTaskService : IUserTaskService
 
         var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
         await httpClient.PostAsync($"elsa/api/user-tasks/{signal}/trigger", content);
+    }
+
+    public async Task<List<WorkflowInstanceModel>> GetWorkflowsWaitingOnUserTask()
+    {
+        var httpClient = _httpClientFactory.CreateClient("UserTaskServiceClient");
+
+        var authenticationResponse = await _authorizationService.GetAccessToken();
+        httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", authenticationResponse.AccessToken);
+
+        return await httpClient.GetFromJsonAsync<List<WorkflowInstanceModel>>("elsa/api/user-tasks/instances");
     }
 }
 
