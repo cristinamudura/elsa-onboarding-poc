@@ -27,9 +27,10 @@ internal class Endpoint : ElsaEndpoint<Request, Response?>
     public override async Task<Response?> ExecuteAsync(Request userTaskRequest,
         CancellationToken cancellationToken)
     {
+
         var instanceFilter = new WorkflowInstanceFilter {Id = userTaskRequest.WorkflowInstanceId};
         var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
-
+        if (workflowInstance== null) { return new Response { UIDefinition = "reload" }; }
         var customUserTask = workflowInstance.WorkflowState.Bookmarks.FirstOrDefault(t => t.Name == "UserOnBoard.UserTask");
         if (customUserTask != null)
         {

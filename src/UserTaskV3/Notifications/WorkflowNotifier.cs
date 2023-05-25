@@ -6,7 +6,7 @@ using UserTaskV3.Hubs;
 
 namespace UserTaskV3.Notifications;
 
-public class WorkflowNotifier : 
+public class WorkflowNotifier :
     INotificationHandler<ActivityExecuting>,
     INotificationHandler<ActivityExecuted>,
     INotificationHandler<WorkflowExecuted>
@@ -17,9 +17,9 @@ public class WorkflowNotifier :
     {
         _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
     }
-    
+
     public async Task HandleAsync(ActivityExecuting notification, CancellationToken cancellationToken)
-    {        
+    {
         var type = notification.ActivityExecutionContext.Activity.Type;
         if (type == "UserOnBoard.UserTask")
         {
@@ -41,7 +41,7 @@ public class WorkflowNotifier :
             );
         }
     }
-    
+
     private static WorkflowInstanceInfo GetInfo(ActivityExecutionContext activityNotification, string action)
     {
         return new WorkflowInstanceInfo
@@ -50,13 +50,14 @@ public class WorkflowNotifier :
             ActivityName = activityNotification.ActivityDescriptor.DisplayName,
             WorkflowInstanceId = activityNotification.WorkflowExecutionContext.Id,
             WorkflowState = activityNotification.WorkflowExecutionContext.Status.ToString(),
+            WorkflowSubState = activityNotification.WorkflowExecutionContext.SubStatus.ToString(),
             Metadata = activityNotification.WorkflowExecutionContext.Properties,
             Action = $"Activity.{action}",
             IsUsertask = activityNotification.Activity.Type == "UserOnBoard.UserTask",
             Description = $"{(string.IsNullOrEmpty(activityNotification.ActivityDescriptor.DisplayName) ? activityNotification.Activity.Id : activityNotification.ActivityDescriptor.DisplayName)}",
         };
     }
-    
+
     private async Task SendNotification(string workflowInstanceId, WorkflowInstanceInfo workflowInstanceInfo)
     {
         await _hubContext.Clients.Group(workflowInstanceId).WorkflowInstanceUpdate(workflowInstanceInfo);
@@ -64,14 +65,16 @@ public class WorkflowNotifier :
 
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
+
         await SendNotification(
                 notification.WorkflowState.Id,
              new WorkflowInstanceInfo
-            {
-                WorkflowState = notification.WorkflowState.Status.ToString(),
-                IsUsertask = false,
-                Description = "Workflow finished"
-            }
+             {
+                 WorkflowState = notification.WorkflowState.Status.ToString(),
+                 WorkflowSubState = notification.WorkflowState.SubStatus.ToString(),
+                 IsUsertask = notification.WorkflowState.Bookmarks.Any(b => b.Name == "UserOnBoard.UserTask"),
+                 Description = $"Workflow state : {notification.WorkflowState.Status} : substate = {notification.WorkflowState.SubStatus}"
+             }
         );
     }
 }

@@ -9,6 +9,7 @@
 
 @inject HubConnection HubConnection
 @inject IUserTaskService UserTaskService; 
+@inject NavigationManager NavigationManager;
 
 @if (HasUserTask() && !string.IsNullOrWhiteSpace(userTaskViewModel.UIDefinition))
 {
@@ -55,17 +56,22 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadTask();
-        
         await HubConnection.InvokeAsync("LeaveWorkflowInstanceGroup", workflowInstanceId);
-        
+
         //setup notifications listener
         HubConnection.On<WorkflowInstanceInfo>("WorkflowInstanceUpdate", async notification => { await UpdateForNotification(notification); });
         await HubConnection.InvokeAsync("JoinWorkflowInstanceGroup", workflowInstanceId);
     }
-    
-    protected override void OnAfterRender(bool firstRender)
+
+    protected async override Task OnParametersSetAsync()
     {
+        await LoadTask();
+        await base.OnParametersSetAsync();
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+
         if (dc != null && dc.Instance != null && userTaskViewModel != null)
         {
             if (userTaskViewModel.Metadata.ContainsKey(userTaskViewModel.ActivityId))
@@ -75,7 +81,7 @@ else
             }
         }
     }
-    
+
     private async Task GoToPrevious()
     {
         var component = dc.Instance as ICustomDynamicComponent;
@@ -85,7 +91,7 @@ else
         TaskFinished();
         await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, activityId, true, signal, dynamicComponentData);
     }
-    
+
     private async Task Continue()
     {
         var component = dc.Instance as ICustomDynamicComponent;
@@ -95,7 +101,7 @@ else
         TaskFinished();
         await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, activityId,false, signal, dynamicComponentData);
     }
-    
+
     private void TaskFinished()
     {
         userTaskViewModel = null;
@@ -104,24 +110,51 @@ else
     private async Task UpdateForNotification(WorkflowInstanceInfo notification)
     {
         latestNotification = notification;
-        
-        if (notification.IsUsertask && !HasUserTask())
+
+        if (notification.IsUsertask && notification.WorkflowSubState == "Suspended" && !HasUserTask())
         {
             await LoadTask();
             await InvokeAsync(() => { StateHasChanged(); });
         }
 
-        if (latestNotification.WorkflowState == "Finished")
+        if (latestNotification.WorkflowState == "Finished" || notification.WorkflowSubState == "Suspended")
         {
             await InvokeAsync(() => { StateHasChanged(); });
         }
     }
 
-    
+
     private async Task LoadTask()
     {
-        userTaskViewModel = await UserTaskService.GetUserTasksFor(workflowInstanceId);
+        TimeSpan initialDelay = TimeSpan.FromMilliseconds(500); // Initial delay of 0.5 seconds
+        TimeSpan currentDelay = initialDelay;
+        int maxIterations = 4;
+        int iterationCount = 0;
+        string errorMessage = null;
+
+        while (iterationCount < maxIterations)
+        {
+            userTaskViewModel = await UserTaskService.GetUserTasksFor(workflowInstanceId);
+
+            // Workaround for initial item that will not load an item.
+            if (userTaskViewModel?.UIDefinition != "reload")
+            {
+                break; // Exit the loop if UIDefinition is not "reload"
+            }
+
+            await Task.Delay(currentDelay);
+
+            currentDelay = TimeSpan.FromMilliseconds(currentDelay.TotalMilliseconds * 2); // Double the current delay
+
+            iterationCount++;
+        }
+
+        if (iterationCount == maxIterations)
+        {
+            latestNotification = new WorkflowInstanceInfo { Description = "Could not load, refresh page" };
+        }
     }
+
 
     public async void Dispose()
     {
@@ -130,12 +163,13 @@ else
 
     private bool HasUserTask()
     {
-        return userTaskViewModel != null;
+        return userTaskViewModel != null && userTaskViewModel.UIDefinition != "reload";
     }
-    
+
     private class WorkflowInstanceInfo
     {
         public string WorkflowState { get; set; }
+        public string WorkflowSubState { get; set; }
         public bool IsUsertask { get; set; }
         public string Description { get; set; }
     }

@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -18,7 +19,7 @@ public class UserTaskService : IUserTaskService
         _authorizationService = authorizationService;
     }
 
-    public async Task<UserTaskViewModel> GetUserTasksFor(string workflowInstanceId)
+    public async Task<UserTaskViewModel?> GetUserTasksFor(string workflowInstanceId)
     {
         var httpClient = _httpClientFactory.CreateClient("UserTaskServiceClient");
 
@@ -28,8 +29,9 @@ public class UserTaskService : IUserTaskService
 
 
         var response = await httpClient.GetAsync($"elsa/api/user-tasks/instances/{workflowInstanceId}");
-
-        return await response.Content.ReadFromJsonAsync<UserTaskViewModel>();
+        if(response.ReasonPhrase == "No Content") { return null; }
+        var result = await response.Content.ReadFromJsonAsync<UserTaskViewModel?>();
+        return result;
     }
 
     public async Task MarkAsCompleteDispatched(string workflowInstanceId, string activityId, bool goToPrevious, string signal,
