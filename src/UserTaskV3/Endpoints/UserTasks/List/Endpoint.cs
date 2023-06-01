@@ -1,11 +1,10 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
-using UserTaskV3.Bookmarks;
+using UserTaskV3.Activities;
 
 namespace UserTaskV3.Endpoints.UserTasks.List;
 
@@ -33,7 +32,7 @@ internal class Endpoint : ElsaEndpointWithoutRequest<IEnumerable<Response>>
 
     public override async Task<IEnumerable<Response>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var activityType = ActivityTypeNameHelper.GenerateTypeName<Activities.UserTask>();
+        var activityType = ActivityTypeNameHelper.GenerateTypeName<DisplayUIActivity>();
         var bookmarkFilter = new BookmarkFilter { ActivityTypeName = activityType };
 
         var bookmarks = await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken);
@@ -46,7 +45,7 @@ internal class Endpoint : ElsaEndpointWithoutRequest<IEnumerable<Response>>
         }, cancellationToken);
 
         
-        return response.Select( i => new Response()
+        return response.Select( i => new Response
         {
             CorrelationId = i.CorrelationId,
             CreatedAt = i.CreatedAt.DateTime,

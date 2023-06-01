@@ -6,7 +6,6 @@ namespace UserTaskV3.Endpoints.UserTasks.Trigger;
 
 internal class UserTaskRequest
 {
-    public string EventName { get; set; } = default!;
     public string? CorrelationId { get; set; }
     
     [JsonConverter(typeof(ExpandoObjectConverterFactory))]

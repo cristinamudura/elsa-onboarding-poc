@@ -3,7 +3,6 @@ using Elsa.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Workflows.Core.Notifications;
-using ElsaEngineV3.Workflows;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cors.Infrastructure;
@@ -32,20 +31,25 @@ services
             identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
         .UseDefaultAuthentication()
-        .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseWorkflowManagement(management =>
+        {
+            management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            management.AddActivitiesFrom<DisplayUIActivity>();
+        })
         .UseWorkflowRuntime(runtime =>
         {
             runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             runtime.UseExecutionLogRecords(e => e.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
             runtime.UseAsyncWorkflowStateExporter();
         })
+        
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()
         .UseWorkflowsApi()
-        .AddWorkflow<OnBoardingWorkflow>()
-        .AddFastEndpointsAssembly(typeof(UserTask))
+        .AddFastEndpointsAssembly(typeof(DisplayUIActivity))
     );
+
 
 //UserTaskServices
 services.AddSingleton<IUserTaskPublisher, UserTaskPublisher>();

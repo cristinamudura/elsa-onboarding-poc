@@ -1,8 +1,10 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
+using UserTaskV3.Activities;
 using UserTaskV3.Bookmarks;
 
 namespace UserTaskV3.Endpoints.UserTasks.Get;
@@ -30,7 +32,12 @@ internal class Endpoint : ElsaEndpoint<Request, Response?>
         var instanceFilter = new WorkflowInstanceFilter {Id = userTaskRequest.WorkflowInstanceId};
         var workflowInstance = await _workflowInstanceStore.FindAsync(instanceFilter, cancellationToken);
 
-        var customUserTask = workflowInstance.WorkflowState.Bookmarks.FirstOrDefault(t => t.Name == "UserOnBoard.UserTask");
+        if (workflowInstance == null)
+        {
+            return null;
+        }
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DisplayUIActivity>();
+        var customUserTask = workflowInstance.WorkflowState.Bookmarks.FirstOrDefault(t => t.Name == activityTypeName);
         if (customUserTask != null)
         {
             var userTaskId = customUserTask.ActivityInstanceId;
@@ -45,7 +52,6 @@ internal class Endpoint : ElsaEndpoint<Request, Response?>
                 UserTaskActivityInstanceId = userTaskId,
                 UIDefinition = activityInfo.ActivityState["UIDefinition"].ToString(),
                 Metadata = workflowInstance.WorkflowState.Properties,
-                Signal = activityInfo.ActivityState["EventName"].ToString(),
                 ActivityId = payload.ActivityId
             };
         }

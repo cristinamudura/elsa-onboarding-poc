@@ -83,7 +83,7 @@ else
         var activityId = userTaskViewModel?.ActivityId ?? string.Empty;
         var signal = userTaskViewModel?.Signal ?? string.Empty;
         TaskFinished();
-        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, activityId, true, signal, dynamicComponentData);
+        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, activityId, true, dynamicComponentData);
     }
     
     private async Task Continue()
@@ -93,7 +93,7 @@ else
         var activityId = userTaskViewModel?.ActivityId ?? string.Empty;
         var signal = userTaskViewModel?.Signal ?? string.Empty;
         TaskFinished();
-        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, activityId,false, signal, dynamicComponentData);
+        await UserTaskService.MarkAsCompleteDispatched(workflowInstanceId, activityId,false, dynamicComponentData);
     }
     
     private void TaskFinished()

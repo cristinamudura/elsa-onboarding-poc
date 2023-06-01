@@ -7,9 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elsa.Api.Common" Version="3.0.0-preview.368" />
-        <PackageReference Include="Elsa.Workflows.Management" Version="3.0.0-preview.368" />
-        <PackageReference Include="Elsa.Workflows.Runtime" Version="3.0.0-preview.368" />
+        <PackageReference Include="Elsa.Api.Common" Version="3.0.0-preview.432" />
+        <PackageReference Include="Elsa.Workflows.Management" Version="3.0.0-preview.432" />
+        <PackageReference Include="Elsa.Workflows.Runtime" Version="3.0.0-preview.432" />
     </ItemGroup>
 
     <ItemGroup Label="SignalR">

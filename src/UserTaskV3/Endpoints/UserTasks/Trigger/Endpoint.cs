@@ -24,16 +24,16 @@ internal class UserTask : ElsaEndpoint<UserTaskRequest>
     public override async Task HandleAsync(UserTaskRequest request, CancellationToken cancellationToken)
     {
         var input = (IDictionary<string, object>?)request.Input;
-        var eventName = request.EventName;
         var correlationId = request.CorrelationId;
         var workflowInstanceId = request.WorkflowInstanceId;
         var workflowExecutionMode = request.WorkflowExecutionMode;
+        var activityId = request.ActivityId;
 
         if (workflowExecutionMode == WorkflowExecutionMode.Asynchronous)
-            await _userTaskPublisher.DispatchAsync(eventName, correlationId, workflowInstanceId, input,
+            await _userTaskPublisher.DispatchAsync(activityId, correlationId, workflowInstanceId, input,
                 cancellationToken);
         else
-            await _userTaskPublisher.PublishAsync(eventName, request.ActivityId, correlationId, workflowInstanceId, input, cancellationToken);
+            await _userTaskPublisher.PublishAsync(activityId, correlationId, workflowInstanceId, input, cancellationToken);
 
         if (!HttpContext.Response.HasStarted) 
             await SendOkAsync(cancellationToken);

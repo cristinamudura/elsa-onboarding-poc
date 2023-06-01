@@ -1,7 +1,9 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
 using Microsoft.AspNetCore.SignalR;
+using UserTaskV3.Activities;
 using UserTaskV3.Hubs;
 
 namespace UserTaskV3.Notifications;
@@ -21,7 +23,9 @@ public class WorkflowNotifier :
     public async Task HandleAsync(ActivityExecuting notification, CancellationToken cancellationToken)
     {        
         var type = notification.ActivityExecutionContext.Activity.Type;
-        if (type == "UserOnBoard.UserTask")
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DisplayUIActivity>();
+
+        if (type == activityTypeName)
         {
             await SendNotification(
                 notification.ActivityExecutionContext.WorkflowExecutionContext.Id,
@@ -33,7 +37,9 @@ public class WorkflowNotifier :
     public async Task HandleAsync(ActivityExecuted notification, CancellationToken cancellationToken)
     {
         var type = notification.ActivityExecutionContext.Activity.Type;
-        if (type == "UserOnBoard.UserTask")
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DisplayUIActivity>();
+
+        if (type == activityTypeName)
         {
             await SendNotification(
                 notification.ActivityExecutionContext.WorkflowExecutionContext.Id,
@@ -44,6 +50,7 @@ public class WorkflowNotifier :
     
     private static WorkflowInstanceInfo GetInfo(ActivityExecutionContext activityNotification, string action)
     {
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DisplayUIActivity>();
         return new WorkflowInstanceInfo
         {
             ActivityId = activityNotification.Activity.Id,
@@ -52,7 +59,7 @@ public class WorkflowNotifier :
             WorkflowState = activityNotification.WorkflowExecutionContext.Status.ToString(),
             Metadata = activityNotification.WorkflowExecutionContext.Properties,
             Action = $"Activity.{action}",
-            IsUsertask = activityNotification.Activity.Type == "UserOnBoard.UserTask",
+            IsUsertask = activityNotification.Activity.Type == activityTypeName,
             Description = $"{(string.IsNullOrEmpty(activityNotification.ActivityDescriptor.DisplayName) ? activityNotification.Activity.Id : activityNotification.ActivityDescriptor.DisplayName)}",
         };
     }

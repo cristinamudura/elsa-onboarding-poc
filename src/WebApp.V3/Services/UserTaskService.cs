@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Text;
-using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WebApp.V3.Models;
@@ -18,7 +17,7 @@ public class UserTaskService : IUserTaskService
         _authorizationService = authorizationService;
     }
 
-    public async Task<UserTaskViewModel> GetUserTasksFor(string workflowInstanceId)
+    public async Task<UserTaskViewModel?> GetUserTasksFor(string workflowInstanceId)
     {
         var httpClient = _httpClientFactory.CreateClient("UserTaskServiceClient");
 
@@ -29,10 +28,10 @@ public class UserTaskService : IUserTaskService
 
         var response = await httpClient.GetAsync($"elsa/api/user-tasks/instances/{workflowInstanceId}");
 
-        return await response.Content.ReadFromJsonAsync<UserTaskViewModel>();
+        return await response.Content.ReadFromJsonAsync<UserTaskViewModel?>();
     }
 
-    public async Task MarkAsCompleteDispatched(string workflowInstanceId, string activityId, bool goToPrevious, string signal,
+    public async Task MarkAsCompleteDispatched(string workflowInstanceId, string activityId, bool goToPrevious,
         JToken signalData)
     {
         var httpClient = _httpClientFactory.CreateClient("UserTaskServiceClient");
@@ -57,7 +56,7 @@ public class UserTaskService : IUserTaskService
         };
 
         var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
-        await httpClient.PostAsync($"elsa/api/user-tasks/{signal}/trigger", content);
+        await httpClient.PostAsync($"elsa/api/user-tasks/{activityId}/trigger", content);
     }
 
     public async Task<List<WorkflowInstanceModel>> GetWorkflowsWaitingOnUserTask()

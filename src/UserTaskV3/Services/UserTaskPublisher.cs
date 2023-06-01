@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models.Requests;
 using UserTaskV3.Activities;
@@ -23,18 +22,18 @@ public class UserTaskPublisher : IUserTaskPublisher
     }
     
     /// <inheritdoc />
-    public async Task PublishAsync(string eventName, string taskName, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(string activityId, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var eventBookmark = new IncomingUserTaskBookmarkPayload(eventName, taskName);
+        var eventBookmark = new IncomingUserTaskBookmarkPayload(activityId);
         var options = new TriggerWorkflowsRuntimeOptions(correlationId, workflowInstanceId, input);
-        await _workflowRuntime.TriggerWorkflowsAsync<UserTask>(eventBookmark, options, cancellationToken);
+        await _workflowRuntime.TriggerWorkflowsAsync<DisplayUIActivity>(eventBookmark, options, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task DispatchAsync(string eventName, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task DispatchAsync(string activityId, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var eventBookmark = new EventBookmarkPayload(eventName);
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<UserTask>();
+        var eventBookmark = new TriggerWorkflowsRuntimeOptions(activityId);
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DisplayUIActivity>();
         var request = new DispatchTriggerWorkflowsRequest(activityTypeName, eventBookmark, correlationId, workflowInstanceId, input);
         await _workflowDispatcher.DispatchAsync(request, cancellationToken);
     }
