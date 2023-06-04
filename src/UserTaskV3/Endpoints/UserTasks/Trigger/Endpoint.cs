@@ -17,7 +17,7 @@ internal class UserTask : ElsaEndpoint<UserTaskRequest>
     
     public override void Configure()
     {
-        Post("/user-tasks/{eventName}/trigger");
+        Post("/user-tasks/{activityId}/trigger");
         ConfigurePermissions("trigger:user-task");
     }
 
